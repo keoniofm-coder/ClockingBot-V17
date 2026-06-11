@@ -1,0 +1,15 @@
+{
+  "name": "discord-clocking-bot",
+  "version": "1.0.0",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.0",
+    "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": "18"
+  }
+}
