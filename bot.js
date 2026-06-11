@@ -19,7 +19,6 @@ const client = new Client({
 });
 
 const clockInData = {};
-const shiftVentes = {}; // 🆕 Stocker les ventes par shift
 
 // ===== ENREGISTREMENT DES SLASH COMMANDS =====
 const commands = [
@@ -83,14 +82,6 @@ function calculerDuree(heureIN, heureOUT) {
   return `${Math.floor(diff / 60)}h ${diff % 60}m`;
 }
 
-// 🆕 Vérifier si c'est le dernier à clock out du shift
-function estDernierClockOut(userId, shiftNom) {
-  const chatteurs = getChatteursByShift(shiftNom);
-  const clockedInOnShift = chatteurs.filter(c => clockInData[c.id]);
-  return clockedInOnShift.length === 0 || 
-         (clockedInOnShift.length === 1 && clockInData[userId]);
-}
-
 // ===== EMBEDS =====
 function creerEmbedClockIn(chatteur, timeIN, modeles, shift) {
   const retard = calculerRetard(shift, timeIN);
@@ -121,28 +112,6 @@ function creerEmbedClockOut(chatteur, timeIN, timeOUT, modeles, shift, ventes) {
       { name: '💰 Ventes', value: `${ventes}$`, inline: true },
       { name: '🎉 Prime', value: `${prime}$`, inline: true }
     )
-    .setTimestamp();
-}
-
-// 🆕 Créer le récap de fin de shift
-function creerRecapShift(shiftNom, heureOut, ventesData) {
-  const totalVentes = Object.values(ventesData).reduce((a, b) => a + b, 0);
-  
-  let description = `**Récap des ventes | Shift ${shiftNom}, Fin ${heureOut}**\n\n`;
-  
-  for (const [userId, ventes] of Object.entries(ventesData)) {
-    const chatteur = CHATTEURS[userId];
-    if (chatteur) {
-      description += `<@${userId}> Ventes : **${ventes}$**\n`;
-    }
-  }
-  
-  description += `\n**Total des ventes : ${totalVentes}$**`;
-  
-  return new EmbedBuilder()
-    .setTitle(`📊 Fin de Shift - ${shiftNom}`)
-    .setColor(0x2ECC71)
-    .setDescription(description)
     .setTimestamp();
 }
 
@@ -229,7 +198,7 @@ client.on('interactionCreate', async interaction => {
         .setCustomId('select_modeles')
         .setPlaceholder('Sélectionne tes modèles (1-3)')
         .setMinValues(1)
-        .setMaxValues(3)
+        .setMaxValues(3) // ✅ MAX 3 MODÈLES
         .addOptions(MODELES.map(m => ({ label: m, value: m })));
       
       const btnValider = new ButtonBuilder()
@@ -318,23 +287,14 @@ client.on('interactionCreate', async interaction => {
       }
       const ventes = parserVentes(interaction.fields.getTextInputValue('input_ventes'));
       const timeOUT = getHeureActuelle();
-      const shift = data.shift;
-
-      // 🆕 Initialiser shiftVentes si nécessaire
-      if (!shiftVentes[shift]) {
-        shiftVentes[shift] = {};
-      }
-
-      // 🆕 Ajouter les ventes à la liste
-      shiftVentes[shift][userId] = ventes;
 
       const salonClocking = await client.channels.fetch(SALONS.clocking);
       await salonClocking.send({
-        content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${shift} | Modèle(s) : ${data.modeles.join(', ')}`
+        content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${data.shift} | Modèle(s) : ${data.modeles.join(', ')}`
       });
 
       const salonPrive = await client.channels.fetch(chatteur.salonPrive);
-      const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, shift, ventes);
+      const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, data.shift, ventes);
       try {
         const msg = await salonPrive.messages.fetch(data.messageId);
         await msg.edit({ embeds: [embedClockOut], components: [] });
@@ -346,16 +306,6 @@ client.on('interactionCreate', async interaction => {
       if (prime > 0) {
         const salonPrimes = await client.channels.fetch(SALONS.primes);
         await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
-      }
-
-      // 🆕 Vérifier si c'est le dernier clock out du shift
-      if (estDernierClockOut(userId, shift)) {
-        const salonAlerteFin = await client.channels.fetch(SALONS.alerteFinShift);
-        const recapEmbed = creerRecapShift(shift, timeOUT, shiftVentes[shift]);
-        await salonAlerteFin.send({ embeds: [recapEmbed] });
-        
-        // Nettoyer les données
-        delete shiftVentes[shift];
       }
 
       delete clockInData[userId];
