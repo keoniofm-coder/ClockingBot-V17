@@ -5,7 +5,7 @@ const { CHATTEURS, SHIFTS, MODELES, SALONS, parserVentes, calculerPrime } = requ
 
 process.env.TZ = 'Europe/Paris';
 
-const TOKEN = process.env.DISCORD_TOKEN; // ← dans Railway > Variables
+const TOKEN = process.env.DISCORD_TOKEN;
 
 const client = new Client({
   intents: [
@@ -15,8 +15,7 @@ const client = new Client({
   ],
 });
 
-// store temporaire en mémoire
-const clockInData = {}; // { userId: { shift, modeles, timeIN, messageId } }
+const clockInData = {};
 
 // ===== HELPERS =====
 function getChatteursByShift(shiftNom) {
@@ -32,9 +31,7 @@ function getHeureActuelle() {
 function calculerRetard(shiftNom, heureArrivee) {
   const shift = SHIFTS.find(s => s.nom === shiftNom);
   const [heure, min] = heureArrivee.split(':').map(Number);
-  const minutesArrivee = heure * 60 + min;
-  let diff = minutesArrivee - shift.debut * 60;
-  // gestion passage minuit (shift de nuit)
+  let diff = (heure * 60 + min) - shift.debut * 60;
   if (diff > 12 * 60) diff -= 24 * 60;
   if (diff < -12 * 60) diff += 24 * 60;
   if (diff < 0) return `${Math.abs(diff)} min en avance`;
@@ -101,7 +98,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // --- Bouton CLOCK IN → affiche le select des modèles ---
+    // CLOCK IN → select modèles
     if (interaction.isButton() && interaction.customId === 'btn_clock_in') {
       const selectModeles = new StringSelectMenuBuilder()
         .setCustomId('select_modeles')
@@ -114,7 +111,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // --- Sélection des modèles → enregistre le clock in ---
+    // SELECT modèles → enregistre clock in
     if (interaction.isStringSelectMenu() && interaction.customId === 'select_modeles') {
       const modeles = interaction.values;
       const shift = chatteur.shift[0];
@@ -122,13 +119,11 @@ client.on('interactionCreate', async interaction => {
 
       clockInData[userId] = { shift, modeles, timeIN, chatteur: chatteur.nom };
 
-      // message dans #clocking
       const salonClocking = await client.channels.fetch(SALONS.clocking);
       await salonClocking.send({
         content: `<@${userId}> CLOCK IN ✅ ${timeIN} | Shift ${shift} | Modèle(s) : ${modeles.join(', ')}`
       });
 
-      // fiche dans salon privé
       const salonPrive = await client.channels.fetch(chatteur.salonPrive);
       const embedClockIn = creerEmbedClockIn(chatteur, timeIN, modeles, shift);
       const btnClockOut = new ActionRowBuilder().addComponents(
@@ -141,7 +136,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // --- Bouton CLOCK OUT → affiche modal ventes ---
+    // CLOCK OUT → modal ventes
     if (interaction.isButton() && interaction.customId === 'btn_clock_out') {
       if (!clockInData[userId]) {
         await interaction.reply({ content: '❌ Aucun clock IN trouvé.', ephemeral: true });
@@ -163,24 +158,21 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // --- Modal ventes soumis → clock out ---
+    // MODAL ventes → clock out final
     if (interaction.isModalSubmit() && interaction.customId === 'modal_ventes') {
       const data = clockInData[userId];
       if (!data) {
         await interaction.reply({ content: '❌ Aucun clock IN trouvé.', ephemeral: true });
         return;
       }
-      const ventesText = interaction.fields.getTextInputValue('input_ventes');
-      const ventes = parserVentes(ventesText);
+      const ventes = parserVentes(interaction.fields.getTextInputValue('input_ventes'));
       const timeOUT = getHeureActuelle();
 
-      // message #clocking
       const salonClocking = await client.channels.fetch(SALONS.clocking);
       await salonClocking.send({
         content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${data.shift} | Modèle(s) : ${data.modeles.join(', ')}`
       });
 
-      // modifie la fiche du salon privé
       const salonPrive = await client.channels.fetch(chatteur.salonPrive);
       const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, data.shift, ventes);
       try {
@@ -190,13 +182,10 @@ client.on('interactionCreate', async interaction => {
         await salonPrive.send({ embeds: [embedClockOut] });
       }
 
-      // prime
       const prime = calculerPrime(ventes, data.modeles);
       if (prime > 0) {
         const salonPrimes = await client.channels.fetch(SALONS.primes);
-        await salonPrimes.send({
-          content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**`
-        });
+        await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
       }
 
       delete clockInData[userId];
