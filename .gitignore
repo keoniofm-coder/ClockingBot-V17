@@ -137,6 +137,11 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+# Clock In Data
+clockInData.json
+shiftVentes.json
+
+
 # Vite files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
