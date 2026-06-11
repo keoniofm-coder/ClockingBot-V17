@@ -34,6 +34,7 @@ const CHATTEURS = {
   '1275411640216457269': { nom: 'Josuah',     shift: ['APREM CAD'],       salonPrive: '1514215113744453752' },
   '1393871746389643327': { nom: 'Thatel',     shift: ['APREM CAD'],       salonPrive: '1494237742047952958' },
   '1472163720305311959': { nom: 'Keoni',     shift: ['APREM CAD'],       salonPrive: '1514271639653716069' },
+  '1069518593215168532': { nom: 'nathan',     shift: ['APREM CAD'],       salonPrive: '1514278882419671110' },
   
   // NUIT CAD (00h-08h)
   '1351209868790464663': { nom: 'Lucius',     shift: ['NUIT CAD'],        salonPrive: '1447921828675719270' },
