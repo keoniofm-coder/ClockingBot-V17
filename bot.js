@@ -81,7 +81,7 @@ function creerEmbedClockOut(chatteur, timeIN, timeOUT, modeles, shift, ventes) {
 }
 
 // ===== READY =====
-client.once('ready', () => {
+client.on('clientReady', () => {
   console.log(`✅ Bot connecté : ${client.user.tag}`);
   planifierNotifications();
 });
