@@ -63,7 +63,7 @@ const MODELES = [
 const SALONS = {
   clocking:    '1514604869162373140',
   alerteShift: '1514604981645217932',
-  primes:      '1514610500426666116',
+  primes:      '1480571097127714816',
 };
 
 const MODELES_GROUPE_A = ['Anna', 'Anais', 'Aurélie', 'Alice', 'Lola', 'Sarah'];
