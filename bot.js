@@ -115,38 +115,43 @@ function creerEmbedClockOut(chatteur, timeIN, timeOUT, modeles, shift, ventes) {
     .setTimestamp();
 }
 
+function creerPanelClocking(chatteur) {
+  return new EmbedBuilder()
+    .setTitle(`📊 Panel Clocking - ${chatteur.nom}`)
+    .setColor(0x5865F2)
+    .addFields(
+      { name: '📋 Shift', value: chatteur.shift.join(', '), inline: false },
+      { name: '👥 Modèles disponibles', value: MODELES.join(', '), inline: false },
+      { name: '⏱️ Status', value: clockInData[chatteur.id] ? '✅ Clock IN actif' : '❌ Non commencé', inline: false }
+    )
+    .setTimestamp();
+}
+
 // ===== READY =====
-client.on('clientReady', async () => {
+client.once('ready', () => {
   console.log(`✅ Bot connecté : ${client.user.tag}`);
-  await registerCommands();
+  registerCommands();
   planifierNotifications();
 });
 
-// ===== SLASH COMMANDS =====
+// ===== INTERACTIONS =====
 client.on('interactionCreate', async interaction => {
   try {
-    // ===== SLASH COMMANDS =====
-    if (interaction.isChatInputCommand()) {
-      const userId = interaction.user.id;
-      const chatteur = CHATTEURS[userId];
+    const userId = interaction.user.id;
+    const chatteur = CHATTEURS[userId];
 
+    // SLASH COMMANDS
+    if (interaction.isCommand()) {
       if (interaction.commandName === 'panel') {
         if (!chatteur) {
           await interaction.reply({ content: "❌ Tu n'es pas enregistré comme chatteur.", ephemeral: true });
           return;
         }
-        const shift = chatteur.shift[0];
-        const embed = new EmbedBuilder()
-          .setTitle(`🎬 Panel Clocking - ${chatteur.nom}`)
-          .setColor(0x0099FF)
-          .addFields(
-            { name: '📊 Shift', value: shift, inline: true },
-            { name: '👥 Modèles', value: MODELES.join(', '), inline: false }
-          );
+        const panelEmbed = creerPanelClocking(chatteur);
         const btnClockIn = new ActionRowBuilder().addComponents(
           new ButtonBuilder().setCustomId('btn_clock_in').setLabel('Clock In').setEmoji('✅').setStyle(ButtonStyle.Success)
         );
-        await interaction.reply({ embeds: [embed], components: [btnClockIn], ephemeral: true });
+        await interaction.reply({ embeds: [panelEmbed], components: [btnClockIn], ephemeral: false });
         return;
       }
 
@@ -155,35 +160,31 @@ client.on('interactionCreate', async interaction => {
           await interaction.reply({ content: "❌ Tu n'es pas enregistré comme chatteur.", ephemeral: true });
           return;
         }
-        const enCours = clockInData[userId] ? '✅ En cours' : '❌ Pas de session';
-        const embed = new EmbedBuilder()
-          .setTitle(`📊 Status - ${chatteur.nom}`)
-          .setColor(0x00FF00)
-          .addFields(
-            { name: 'Status', value: enCours, inline: true },
-            { name: 'Shift', value: chatteur.shift[0], inline: true }
-          );
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        const statusMsg = clockInData[userId] 
+          ? `✅ Tu es en Clock IN depuis ${clockInData[userId].timeIN}\nShift: ${clockInData[userId].shift}\nModèles: ${clockInData[userId].modeles.join(', ')}`
+          : '❌ Tu n\'es pas en Clock IN';
+        await interaction.reply({ content: statusMsg, ephemeral: true });
         return;
       }
 
       if (interaction.commandName === 'help') {
-        const embed = new EmbedBuilder()
-          .setTitle('❓ Aide du Bot')
-          .setColor(0x0099FF)
+        const helpEmbed = new EmbedBuilder()
+          .setTitle('📖 Aide du Bot Clocking')
+          .setColor(0x5865F2)
           .addFields(
-            { name: '/panel', value: 'Affiche le panel de clocking', inline: false },
-            { name: '/status', value: 'Affiche ton status', inline: false },
-            { name: '/help', value: 'Affiche cette aide', inline: false }
-          );
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+            { name: '/panel', value: 'Affiche ton panel de clocking', inline: false },
+            { name: '/status', value: 'Affiche ton status actuel', inline: false },
+            { name: '/help', value: 'Affiche cette aide', inline: false },
+            { name: 'Clock In', value: 'Clique sur le bouton et sélectionne 1 à 3 modèles', inline: false },
+            { name: 'Clock Out', value: 'Clique sur le bouton et rentre tes ventes', inline: false }
+          )
+          .setTimestamp();
+        await interaction.reply({ embeds: [helpEmbed], ephemeral: true });
         return;
       }
     }
 
-    // ===== BOUTONS & MENUS =====
-    const userId = interaction.user.id;
-    const chatteur = CHATTEURS[userId];
+    // BUTTONS & SELECT MENUS
     if (!chatteur) {
       if (interaction.isRepliable()) {
         await interaction.reply({ content: "❌ Tu n'es pas enregistré comme chatteur.", ephemeral: true });
@@ -191,16 +192,16 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // CLOCK IN → select modèles
+    // CLOCK IN → select modèles (1-3 MAX)
     if (interaction.isButton() && interaction.customId === 'btn_clock_in') {
       const selectModeles = new StringSelectMenuBuilder()
         .setCustomId('select_modeles')
-        .setPlaceholder('Sélectionne tes modèles')
+        .setPlaceholder('Sélectionne tes modèles (1-3)')
         .setMinValues(1)
-        .setMaxValues(MODELES.length)
+        .setMaxValues(3) // ✅ MAX 3 MODÈLES
         .addOptions(MODELES.map(m => ({ label: m, value: m })));
       const row = new ActionRowBuilder().addComponents(selectModeles);
-      await interaction.reply({ content: '📌 Sélectionne tes modèles :', components: [row], ephemeral: true });
+      await interaction.reply({ content: '📌 Sélectionne tes modèles (1 à 3) :', components: [row], ephemeral: true });
       return;
     }
 
