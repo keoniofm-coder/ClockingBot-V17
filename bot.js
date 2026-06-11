@@ -192,7 +192,7 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // CLOCK IN → select modèles (1-3 MAX)
+    // CLOCK IN → select modèles (1-3 MAX) + BOUTON VALIDER
     if (interaction.isButton() && interaction.customId === 'btn_clock_in') {
       const selectModeles = new StringSelectMenuBuilder()
         .setCustomId('select_modeles')
@@ -200,14 +200,40 @@ client.on('interactionCreate', async interaction => {
         .setMinValues(1)
         .setMaxValues(3) // ✅ MAX 3 MODÈLES
         .addOptions(MODELES.map(m => ({ label: m, value: m })));
-      const row = new ActionRowBuilder().addComponents(selectModeles);
-      await interaction.reply({ content: '📌 Sélectionne tes modèles (1 à 3) :', components: [row], ephemeral: true });
+      
+      const btnValider = new ButtonBuilder()
+        .setCustomId('btn_valider_modeles')
+        .setLabel('✅ Valider')
+        .setStyle(ButtonStyle.Success);
+
+      const row1 = new ActionRowBuilder().addComponents(selectModeles);
+      const row2 = new ActionRowBuilder().addComponents(btnValider);
+      
+      await interaction.reply({ 
+        content: '📌 Sélectionne tes modèles (1 à 3) puis clique sur Valider :', 
+        components: [row1, row2], 
+        ephemeral: true 
+      });
       return;
     }
 
-    // SELECT modèles → enregistre clock in
+    // SELECT modèles → stocke temporairement
     if (interaction.isStringSelectMenu() && interaction.customId === 'select_modeles') {
-      const modeles = interaction.values;
+      clockInData[userId] = { modeles: interaction.values };
+      await interaction.deferUpdate();
+      return;
+    }
+
+    // VALIDER MODELES → enregistre clock in
+    if (interaction.isButton() && interaction.customId === 'btn_valider_modeles') {
+      const data = clockInData[userId];
+      
+      if (!data || !data.modeles || data.modeles.length === 0) {
+        await interaction.reply({ content: '❌ Tu dois d\'abord sélectionner des modèles !', ephemeral: true });
+        return;
+      }
+
+      const modeles = data.modeles;
       const shift = chatteur.shift[0];
       const timeIN = getHeureActuelle();
 
