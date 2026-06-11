@@ -360,14 +360,23 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // MODAL ventes → clock out final
+    // 🆕 MODAL ventes → clock out final AVEC FIX
     if (interaction.isModalSubmit() && interaction.customId === 'modal_ventes') {
+      // 🆕 DEFER LA RÉPONSE IMMÉDIATEMENT
+      await interaction.deferReply({ ephemeral: true });
+
       const data = clockInData[userId];
       if (!data) {
-        await interaction.reply({ content: '❌ Aucun clock IN trouvé. Fais un nouveau clock in.', ephemeral: true });
-        return;
+        return await interaction.editReply({ content: '❌ Aucun clock IN trouvé. Fais un nouveau clock in.' });
       }
-      const ventes = parserVentes(interaction.fields.getTextInputValue('input_ventes'));
+
+      const venteInput = interaction.fields.getTextInputValue('input_ventes');
+      const ventes = parserVentes(venteInput);
+      
+      if (!ventes) {
+        return await interaction.editReply({ content: '❌ Format invalide. Utilise: 250 ou 250.68 ou 250,68' });
+      }
+
       const timeOUT = getHeureActuelle();
       const shift = data.shift;
 
@@ -414,12 +423,20 @@ client.on('interactionCreate', async interaction => {
       delete clockInData[userId];
       sauvegarderClockInData(); // 🆕 Sauvegarder après clock out
       
-      await interaction.reply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$`, ephemeral: true });
-      return;
+      // 🆕 EDIT REPLY AU LIEU DE REPLY
+      return await interaction.editReply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$` });
     }
 
   } catch (error) {
     console.error('❌ Erreur interaction:', error);
+    // 🆕 GÉRER L'ERREUR PROPREMENT
+    if (interaction.isModalSubmit() && !interaction.replied && !interaction.deferred) {
+      try {
+        await interaction.reply({ content: '❌ Une erreur s\'est produite.', ephemeral: true });
+      } catch (e) {
+        console.error('Impossible d\'envoyer le message d\'erreur');
+      }
+    }
   }
 });
 
