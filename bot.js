@@ -1,4 +1,4 @@
-// bot.js
+// bot.js - VERSION CORRIGÉE COMPLÈTE
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, REST, Routes } = require('discord.js');
 const cron = require('node-cron');
 const fs = require('fs');
@@ -208,8 +208,8 @@ function creerPanelClocking(chatteur) {
 // ===== READY =====
 client.once('ready', () => {
   console.log(`✅ Bot connecté : ${client.user.tag}`);
-  chargerClockInData(); // 🆕 Charger les données au démarrage
-  chargerShiftVentes(); // 🆕 Charger les ventes au démarrage
+  chargerClockInData();
+  chargerShiftVentes();
   registerCommands();
   planifierNotifications();
 });
@@ -318,7 +318,7 @@ client.on('interactionCreate', async interaction => {
       const timeIN = getHeureActuelle();
 
       clockInData[userId] = { shift, modeles, timeIN, chatteur: chatteur.nom };
-      sauvegarderClockInData(); // 🆕 Sauvegarder après chaque clock in
+      sauvegarderClockInData();
 
       const salonClocking = await client.channels.fetch(SALONS.clocking);
       await salonClocking.send({
@@ -332,7 +332,7 @@ client.on('interactionCreate', async interaction => {
       );
       const msgPrive = await salonPrive.send({ embeds: [embedClockIn], components: [btnClockOut] });
       clockInData[userId].messageId = msgPrive.id;
-      sauvegarderClockInData(); // 🆕 Sauvegarder avec l'ID du message
+      sauvegarderClockInData();
 
       await interaction.update({ content: '✅ Clock IN validé !', components: [] });
       return;
@@ -351,7 +351,7 @@ client.on('interactionCreate', async interaction => {
           new ActionRowBuilder().addComponents(
             new TextInputBuilder()
               .setCustomId('input_ventes')
-              .setLabel('Total ventes (ex: 250, 250.68)')
+              .setLabel('Total ventes (ex: 250, 250.68, 250,68)')
               .setStyle(TextInputStyle.Short)
               .setRequired(true)
           )
@@ -360,83 +360,86 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // 🆕 MODAL ventes → clock out final AVEC FIX
+    // ✅ MODAL ventes → clock out final (CORRIGÉ)
     if (interaction.isModalSubmit() && interaction.customId === 'modal_ventes') {
-      // 🆕 DEFER LA RÉPONSE IMMÉDIATEMENT
-      await interaction.deferReply({ ephemeral: true });
-
-      const data = clockInData[userId];
-      if (!data) {
-        return await interaction.editReply({ content: '❌ Aucun clock IN trouvé. Fais un nouveau clock in.' });
-      }
-
-      const venteInput = interaction.fields.getTextInputValue('input_ventes');
-      const ventes = parserVentes(venteInput);
-      
-      if (!ventes) {
-        return await interaction.editReply({ content: '❌ Format invalide. Utilise: 250 ou 250.68 ou 250,68' });
-      }
-
-      const timeOUT = getHeureActuelle();
-      const shift = data.shift;
-
-      // Initialiser shiftVentes si nécessaire
-      if (!shiftVentes[shift]) {
-        shiftVentes[shift] = {};
-      }
-
-      // Ajouter les ventes à la liste
-      shiftVentes[shift][userId] = ventes;
-      sauvegarderShiftVentes(); // 🆕 Sauvegarder les ventes
-
-      const salonClocking = await client.channels.fetch(SALONS.clocking);
-      await salonClocking.send({
-        content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${shift} | Modèle(s) : ${data.modeles.join(', ')}`
-      });
-
-      const salonPrive = await client.channels.fetch(chatteur.salonPrive);
-      const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, shift, ventes);
       try {
-        const msg = await salonPrive.messages.fetch(data.messageId);
-        await msg.edit({ embeds: [embedClockOut], components: [] });
-      } catch (e) {
-        await salonPrive.send({ embeds: [embedClockOut] });
-      }
+        await interaction.deferReply({ ephemeral: true });
 
-      const prime = calculerPrime(ventes, data.modeles);
-      if (prime > 0) {
-        const salonPrimes = await client.channels.fetch(SALONS.primes);
-        await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
-      }
+        const data = clockInData[userId];
+        if (!data) {
+          return await interaction.editReply({ content: '❌ Aucun clock IN trouvé. Fais un nouveau clock in.' });
+        }
 
-      // Vérifier si c'est le dernier clock out du shift
-      if (estDernierClockOut(userId, shift)) {
-        const salonAlerteFin = await client.channels.fetch(SALONS.alerteFinShift);
-        const recapEmbed = creerRecapShift(shift, timeOUT, shiftVentes[shift]);
-        await salonAlerteFin.send({ embeds: [recapEmbed] });
+        const ventesInput = interaction.fields.getTextInputValue('input_ventes');
+        const ventes = parserVentes(ventesInput);
+
+        // ✅ VALIDATION : 0 à 20000
+        if (isNaN(ventes) || ventes < 0 || ventes > 20000) {
+          return await interaction.editReply({ 
+            content: '❌ Format invalide. Utilise: 0, 250, 250.34 ou 250,34 (max 20000)' 
+          });
+        }
+
+        const timeOUT = getHeureActuelle();
+        const shift = data.shift;
+
+        if (!shiftVentes[shift]) {
+          shiftVentes[shift] = {};
+        }
+
+        shiftVentes[shift][userId] = ventes;
+        sauvegarderShiftVentes();
+
+        const salonClocking = await client.channels.fetch(SALONS.clocking);
+        await salonClocking.send({
+          content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${shift} | Modèle(s) : ${data.modeles.join(', ')}`
+        });
+
+        const salonPrive = await client.channels.fetch(chatteur.salonPrive);
+        const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, shift, ventes);
+        try {
+          const msg = await salonPrive.messages.fetch(data.messageId);
+          await msg.edit({ embeds: [embedClockOut], components: [] });
+        } catch (e) {
+          await salonPrive.send({ embeds: [embedClockOut] });
+        }
+
+        const prime = calculerPrime(ventes, data.modeles);
+        if (prime > 0) {
+          const salonPrimes = await client.channels.fetch(SALONS.primes);
+          await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
+        }
+
+        if (estDernierClockOut(userId, shift)) {
+          const salonAlerteFin = await client.channels.fetch(SALONS.alerteFinShift);
+          const recapEmbed = creerRecapShift(shift, timeOUT, shiftVentes[shift]);
+          await salonAlerteFin.send({ embeds: [recapEmbed] });
+          
+          delete shiftVentes[shift];
+          sauvegarderShiftVentes();
+        }
+
+        delete clockInData[userId];
+        sauvegarderClockInData();
         
-        // Nettoyer les données
-        delete shiftVentes[shift];
-        sauvegarderShiftVentes(); // 🆕 Sauvegarder après nettoyage
-      }
+        return await interaction.editReply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$` });
 
-      delete clockInData[userId];
-      sauvegarderClockInData(); // 🆕 Sauvegarder après clock out
-      
-      // 🆕 EDIT REPLY AU LIEU DE REPLY
-      return await interaction.editReply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$` });
+      } catch (error) {
+        console.error('❌ Erreur modal ventes:', error);
+        if (!interaction.replied && !interaction.deferred) {
+          try {
+            await interaction.reply({ content: '❌ Une erreur s\'est produite.', ephemeral: true });
+          } catch (e) {
+            console.error('Impossible d\'envoyer le message d\'erreur');
+          }
+        } else {
+          await interaction.editReply({ content: '❌ Une erreur s\'est produite.' });
+        }
+      }
     }
 
   } catch (error) {
     console.error('❌ Erreur interaction:', error);
-    // 🆕 GÉRER L'ERREUR PROPREMENT
-    if (interaction.isModalSubmit() && !interaction.replied && !interaction.deferred) {
-      try {
-        await interaction.reply({ content: '❌ Une erreur s\'est produite.', ephemeral: true });
-      } catch (e) {
-        console.error('Impossible d\'envoyer le message d\'erreur');
-      }
-    }
   }
 });
 
