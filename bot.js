@@ -1,21 +1,56 @@
 // bot.js
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, REST, Routes } = require('discord.js');
 const cron = require('node-cron');
 const { CHATTEURS, SHIFTS, MODELES, SALONS, parserVentes, calculerPrime } = require('./config');
 
 process.env.TZ = 'Europe/Paris';
 
 const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const GUILD_ID = process.env.GUILD_ID;
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
   ],
 });
 
 const clockInData = {};
+
+// ===== ENREGISTREMENT DES SLASH COMMANDS =====
+const commands = [
+  {
+    name: 'panel',
+    description: 'Affiche le panel de clocking',
+  },
+  {
+    name: 'status',
+    description: 'Affiche ton status actuel',
+  },
+  {
+    name: 'help',
+    description: 'Aide du bot',
+  },
+];
+
+async function registerCommands() {
+  try {
+    const rest = new REST({ version: '10' }).setToken(TOKEN);
+    console.log('🔄 Enregistrement des slash commands...');
+    
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+      { body: commands },
+    );
+    
+    console.log('✅ Slash commands enregistrées !');
+  } catch (error) {
+    console.error('❌ Erreur enregistrement:', error);
+  }
+}
 
 // ===== HELPERS =====
 function getChatteursByShift(shiftNom) {
@@ -81,14 +116,72 @@ function creerEmbedClockOut(chatteur, timeIN, timeOUT, modeles, shift, ventes) {
 }
 
 // ===== READY =====
-client.on('clientReady', () => {
+client.on('clientReady', async () => {
   console.log(`✅ Bot connecté : ${client.user.tag}`);
+  await registerCommands();
   planifierNotifications();
 });
 
-// ===== INTERACTIONS =====
+// ===== SLASH COMMANDS =====
 client.on('interactionCreate', async interaction => {
   try {
+    // ===== SLASH COMMANDS =====
+    if (interaction.isChatInputCommand()) {
+      const userId = interaction.user.id;
+      const chatteur = CHATTEURS[userId];
+
+      if (interaction.commandName === 'panel') {
+        if (!chatteur) {
+          await interaction.reply({ content: "❌ Tu n'es pas enregistré comme chatteur.", ephemeral: true });
+          return;
+        }
+        const shift = chatteur.shift[0];
+        const embed = new EmbedBuilder()
+          .setTitle(`🎬 Panel Clocking - ${chatteur.nom}`)
+          .setColor(0x0099FF)
+          .addFields(
+            { name: '📊 Shift', value: shift, inline: true },
+            { name: '👥 Modèles', value: MODELES.join(', '), inline: false }
+          );
+        const btnClockIn = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('btn_clock_in').setLabel('Clock In').setEmoji('✅').setStyle(ButtonStyle.Success)
+        );
+        await interaction.reply({ embeds: [embed], components: [btnClockIn], ephemeral: true });
+        return;
+      }
+
+      if (interaction.commandName === 'status') {
+        if (!chatteur) {
+          await interaction.reply({ content: "❌ Tu n'es pas enregistré comme chatteur.", ephemeral: true });
+          return;
+        }
+        const enCours = clockInData[userId] ? '✅ En cours' : '❌ Pas de session';
+        const embed = new EmbedBuilder()
+          .setTitle(`📊 Status - ${chatteur.nom}`)
+          .setColor(0x00FF00)
+          .addFields(
+            { name: 'Status', value: enCours, inline: true },
+            { name: 'Shift', value: chatteur.shift[0], inline: true }
+          );
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
+      if (interaction.commandName === 'help') {
+        const embed = new EmbedBuilder()
+          .setTitle('❓ Aide du Bot')
+          .setColor(0x0099FF)
+          .addFields(
+            { name: '/panel', value: 'Affiche le panel de clocking', inline: false },
+            { name: '/status', value: 'Affiche ton status', inline: false },
+            { name: '/help', value: 'Affiche cette aide', inline: false }
+          );
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+    }
+
+    // ===== BOUTONS & MENUS =====
     const userId = interaction.user.id;
     const chatteur = CHATTEURS[userId];
     if (!chatteur) {
