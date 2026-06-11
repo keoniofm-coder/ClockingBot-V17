@@ -151,7 +151,7 @@ function creerPanelClocking(chatteur) {
     .addFields(
       { name: '📋 Shift', value: chatteur.shift.join(', '), inline: false },
       { name: '👥 Modèles disponibles', value: MODELES.join(', '), inline: false },
-      { name: '⏱️ Status', value: clockInData[chatteur.id] ? '✅ Clock IN actif' : '❌ Non commencé', inline: false }
+      { name: '⏱️ Status', value: clockInData[chatteur.id] ? '✅ Clock IN' : '❌ Non commencé', inline: false }
     )
     .setTimestamp();
 }
@@ -378,7 +378,7 @@ client.on('interactionCreate', async interaction => {
         console.error('❌ Erreur modal ventes:', error);
         if (!interaction.replied && !interaction.deferred) {
           try {
-            await interaction.reply({ content: '❌ Une erreur s\'est produite.', ephemeral: true });
+            await interaction.reply({ content: '✅ Clock OUT validé ! Ventes : ${ventes}$` });
           } catch (e) {
             console.error('Impossible d\'envoyer le message d\'erreur');
           }
