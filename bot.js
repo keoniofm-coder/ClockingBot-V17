@@ -1,6 +1,8 @@
 // bot.js
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, REST, Routes } = require('discord.js');
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 const { CHATTEURS, SHIFTS, MODELES, SALONS, parserVentes, calculerPrime } = require('./config');
 
 process.env.TZ = 'Europe/Paris';
@@ -8,6 +10,10 @@ process.env.TZ = 'Europe/Paris';
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
+
+// 🆕 Chemins des fichiers de sauvegarde
+const CLOCK_DATA_FILE = path.join(__dirname, 'clockInData.json');
+const SHIFT_VENTES_FILE = path.join(__dirname, 'shiftVentes.json');
 
 const client = new Client({
   intents: [
@@ -18,8 +24,51 @@ const client = new Client({
   ],
 });
 
-const clockInData = {};
-const shiftVentes = {}; // 🆕 Stocker les ventes par shift
+let clockInData = {};
+let shiftVentes = {};
+
+// ===== SAUVEGARDE / CHARGEMENT DONNÉES =====
+function sauvegarderClockInData() {
+  try {
+    fs.writeFileSync(CLOCK_DATA_FILE, JSON.stringify(clockInData, null, 2));
+    console.log('💾 clockInData sauvegardée');
+  } catch (e) {
+    console.error('❌ Erreur sauvegarde clockInData:', e);
+  }
+}
+
+function chargerClockInData() {
+  try {
+    if (fs.existsSync(CLOCK_DATA_FILE)) {
+      clockInData = JSON.parse(fs.readFileSync(CLOCK_DATA_FILE, 'utf8'));
+      console.log('📂 clockInData chargée:', Object.keys(clockInData).length, 'entrées');
+    }
+  } catch (e) {
+    console.error('❌ Erreur chargement clockInData:', e);
+    clockInData = {};
+  }
+}
+
+function sauvegarderShiftVentes() {
+  try {
+    fs.writeFileSync(SHIFT_VENTES_FILE, JSON.stringify(shiftVentes, null, 2));
+    console.log('💾 shiftVentes sauvegardée');
+  } catch (e) {
+    console.error('❌ Erreur sauvegarde shiftVentes:', e);
+  }
+}
+
+function chargerShiftVentes() {
+  try {
+    if (fs.existsSync(SHIFT_VENTES_FILE)) {
+      shiftVentes = JSON.parse(fs.readFileSync(SHIFT_VENTES_FILE, 'utf8'));
+      console.log('📂 shiftVentes chargée');
+    }
+  } catch (e) {
+    console.error('❌ Erreur chargement shiftVentes:', e);
+    shiftVentes = {};
+  }
+}
 
 // ===== ENREGISTREMENT DES SLASH COMMANDS =====
 const commands = [
@@ -83,7 +132,6 @@ function calculerDuree(heureIN, heureOUT) {
   return `${Math.floor(diff / 60)}h ${diff % 60}m`;
 }
 
-// 🆕 Vérifier si c'est le dernier à clock out du shift
 function estDernierClockOut(userId, shiftNom) {
   const chatteurs = getChatteursByShift(shiftNom);
   const clockedInOnShift = chatteurs.filter(c => clockInData[c.id]);
@@ -124,7 +172,6 @@ function creerEmbedClockOut(chatteur, timeIN, timeOUT, modeles, shift, ventes) {
     .setTimestamp();
 }
 
-// 🆕 Créer le récap de fin de shift
 function creerRecapShift(shiftNom, heureOut, ventesData) {
   const totalVentes = Object.values(ventesData).reduce((a, b) => a + b, 0);
   
@@ -161,6 +208,8 @@ function creerPanelClocking(chatteur) {
 // ===== READY =====
 client.once('ready', () => {
   console.log(`✅ Bot connecté : ${client.user.tag}`);
+  chargerClockInData(); // 🆕 Charger les données au démarrage
+  chargerShiftVentes(); // 🆕 Charger les ventes au démarrage
   registerCommands();
   planifierNotifications();
 });
@@ -269,6 +318,7 @@ client.on('interactionCreate', async interaction => {
       const timeIN = getHeureActuelle();
 
       clockInData[userId] = { shift, modeles, timeIN, chatteur: chatteur.nom };
+      sauvegarderClockInData(); // 🆕 Sauvegarder après chaque clock in
 
       const salonClocking = await client.channels.fetch(SALONS.clocking);
       await salonClocking.send({
@@ -282,6 +332,7 @@ client.on('interactionCreate', async interaction => {
       );
       const msgPrive = await salonPrive.send({ embeds: [embedClockIn], components: [btnClockOut] });
       clockInData[userId].messageId = msgPrive.id;
+      sauvegarderClockInData(); // 🆕 Sauvegarder avec l'ID du message
 
       await interaction.update({ content: '✅ Clock IN validé !', components: [] });
       return;
@@ -290,7 +341,7 @@ client.on('interactionCreate', async interaction => {
     // CLOCK OUT → modal ventes
     if (interaction.isButton() && interaction.customId === 'btn_clock_out') {
       if (!clockInData[userId]) {
-        await interaction.reply({ content: '❌ Aucun clock IN trouvé.', ephemeral: true });
+        await interaction.reply({ content: '❌ Aucun clock IN trouvé. Fais un nouveau clock in.', ephemeral: true });
         return;
       }
       const modal = new ModalBuilder()
@@ -313,20 +364,21 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isModalSubmit() && interaction.customId === 'modal_ventes') {
       const data = clockInData[userId];
       if (!data) {
-        await interaction.reply({ content: '❌ Aucun clock IN trouvé.', ephemeral: true });
+        await interaction.reply({ content: '❌ Aucun clock IN trouvé. Fais un nouveau clock in.', ephemeral: true });
         return;
       }
       const ventes = parserVentes(interaction.fields.getTextInputValue('input_ventes'));
       const timeOUT = getHeureActuelle();
       const shift = data.shift;
 
-      // 🆕 Initialiser shiftVentes si nécessaire
+      // Initialiser shiftVentes si nécessaire
       if (!shiftVentes[shift]) {
         shiftVentes[shift] = {};
       }
 
-      // 🆕 Ajouter les ventes à la liste
+      // Ajouter les ventes à la liste
       shiftVentes[shift][userId] = ventes;
+      sauvegarderShiftVentes(); // 🆕 Sauvegarder les ventes
 
       const salonClocking = await client.channels.fetch(SALONS.clocking);
       await salonClocking.send({
@@ -348,7 +400,7 @@ client.on('interactionCreate', async interaction => {
         await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
       }
 
-      // 🆕 Vérifier si c'est le dernier clock out du shift
+      // Vérifier si c'est le dernier clock out du shift
       if (estDernierClockOut(userId, shift)) {
         const salonAlerteFin = await client.channels.fetch(SALONS.alerteFinShift);
         const recapEmbed = creerRecapShift(shift, timeOUT, shiftVentes[shift]);
@@ -356,9 +408,12 @@ client.on('interactionCreate', async interaction => {
         
         // Nettoyer les données
         delete shiftVentes[shift];
+        sauvegarderShiftVentes(); // 🆕 Sauvegarder après nettoyage
       }
 
       delete clockInData[userId];
+      sauvegarderClockInData(); // 🆕 Sauvegarder après clock out
+      
       await interaction.reply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$`, ephemeral: true });
       return;
     }
