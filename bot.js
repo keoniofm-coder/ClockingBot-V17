@@ -285,107 +285,39 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // CLOCK OUT → modal ventes
-    if (interaction.isButton() && interaction.customId === 'btn_clock_out') {
-      if (!clockInData[userId]) {
+    // MODAL ventes → clock out final
+    if (interaction.isModalSubmit() && interaction.customId === 'modal_ventes') {
+      const data = clockInData[userId];
+      if (!data) {
         await interaction.reply({ content: '❌ Aucun clock IN trouvé.', ephemeral: true });
         return;
       }
-      const modal = new ModalBuilder()
-        .setCustomId('modal_ventes')
-        .setTitle('Rentre tes ventes')
-        .addComponents(
-          new ActionRowBuilder().addComponents(
-            new TextInputBuilder()
-              .setCustomId('input_ventes')
-              .setLabel('Total ventes (ex: 250, 250.68)')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(true)
-          )
-        );
-      await interaction.showModal(modal);
-      return;
-    }
+      const ventes = parserVentes(interaction.fields.getTextInputValue('input_ventes'));
+      const timeOUT = getHeureActuelle();
 
-    // 🆕 MODAL ventes → clock out final AVEC FIX COMPLET
-    if (interaction.isModalSubmit() && interaction.customId === 'modal_ventes') {
+      const salonClocking = await client.channels.fetch(SALONS.clocking);
+      await salonClocking.send({
+        content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${data.shift} | Modèle(s) : ${data.modeles.join(', ')}`
+      });
+
+      const salonPrive = await client.channels.fetch(chatteur.salonPrive);
+      const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, data.shift, ventes);
       try {
-        // ✅ DEFER LA RÉPONSE IMMÉDIATEMENT
-        await interaction.deferReply({ ephemeral: true });
-
-        const data = clockInData[userId];
-        if (!data) {
-          return await interaction.editReply({ content: '❌ Aucun clock IN trouvé.' });
-        }
-
-        const ventesInput = interaction.fields.getTextInputValue('input_ventes');
-        const ventes = parserVentes(ventesInput);
-
-        // ✅ VALIDATION STRICTE
-        if (isNaN(ventes) || ventes < 0 || ventes > 20000) {
-          return await interaction.editReply({ 
-            content: '❌ Format invalide. Utilise: 0, 250, 250.34 ou 250,34 (max 20000)' 
-          });
-        }
-
-        const timeOUT = getHeureActuelle();
-        const shift = data.shift;
-
-        // Initialiser shiftVentes si nécessaire
-        if (!shiftVentes[shift]) {
-          shiftVentes[shift] = {};
-        }
-
-        // Ajouter les ventes à la liste
-        shiftVentes[shift][userId] = ventes;
-
-        const salonClocking = await client.channels.fetch(SALONS.clocking);
-        await salonClocking.send({
-          content: `<@${userId}> CLOCK OUT 🔴 ${timeOUT} | Shift ${shift} | Modèle(s) : ${data.modeles.join(', ')}`
-        });
-
-        const salonPrive = await client.channels.fetch(chatteur.salonPrive);
-        const embedClockOut = creerEmbedClockOut(chatteur, data.timeIN, timeOUT, data.modeles, shift, ventes);
-        try {
-          const msg = await salonPrive.messages.fetch(data.messageId);
-          await msg.edit({ embeds: [embedClockOut], components: [] });
-        } catch (e) {
-          await salonPrive.send({ embeds: [embedClockOut] });
-        }
-
-        const prime = calculerPrime(ventes, data.modeles);
-        if (prime > 0) {
-          const salonPrimes = await client.channels.fetch(SALONS.primes);
-          await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
-        }
-
-        // Vérifier si c'est le dernier clock out du shift
-        if (estDernierClockOut(userId, shift)) {
-          const salonAlerteFin = await client.channels.fetch(SALONS.alerteFinShift);
-          const recapEmbed = creerRecapShift(shift, timeOUT, shiftVentes[shift]);
-          await salonAlerteFin.send({ embeds: [recapEmbed] });
-          
-          // Nettoyer les données
-          delete shiftVentes[shift];
-        }
-
-        delete clockInData[userId];
-        
-        // ✅ EDIT REPLY AU LIEU DE REPLY
-        return await interaction.editReply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$` });
-
-      } catch (error) {
-        console.error('❌ Erreur modal ventes:', error);
-        if (!interaction.replied && !interaction.deferred) {
-          try {
-            await interaction.reply({ content: '✅ Clock OUT validé ! Ventes : ${ventes}$` });
-          } catch (e) {
-            console.error('Impossible d\'envoyer le message d\'erreur');
-          }
-        } else {
-          await interaction.editReply({ content: '❌ Une erreur s\'est produite.' });
-        }
+        const msg = await salonPrive.messages.fetch(data.messageId);
+        await msg.edit({ embeds: [embedClockOut], components: [] });
+      } catch (e) {
+        await salonPrive.send({ embeds: [embedClockOut] });
       }
+
+      const prime = calculerPrime(ventes, data.modeles);
+      if (prime > 0) {
+        const salonPrimes = await client.channels.fetch(SALONS.primes);
+        await salonPrimes.send({ content: `<@${userId}> Bien joué ! 🎉 Prime de **${prime}$**` });
+      }
+
+      delete clockInData[userId];
+      await interaction.reply({ content: `✅ Clock OUT validé ! Ventes : ${ventes}$`, ephemeral: true });
+      return;
     }
 
   } catch (error) {
