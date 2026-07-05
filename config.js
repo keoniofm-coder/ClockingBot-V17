@@ -4,8 +4,8 @@ const CHATTEURS = {
   '1466760403462914111': { nom: 'Mialy',      shift: ['MATIN'],           salonPrive: '1456726270057382112' },
   '1480839559385448572': { nom: 'Sébastien',  shift: ['MATIN'],           salonPrive: '1482430724865786038' },
   '1436794235604041818': { nom: 'Michel',     shift: ['MATIN'],           salonPrive: '1500481974937190440' },
-  '1430813268972277771': { nom: 'Kevin',      shift: ['MATIN'],           salonPrive: '1504168415504502865' },
-  '1403416949689552980': { nom: 'Max',        shift: ['MATIN'],           salonPrive: '1511351245380784178' },
+  '698610283504992298': { nom: 'Anthony M',      shift: ['MATIN'],           salonPrive: '1521109946358562846' },
+  '1495831931496038421': { nom: 'Arie',       shift: ['MATIN'],           salonPrive: '1521110264718819428' },
   '1156954051750150185': { nom: 'Jodel',      shift: ['MATIN'],           salonPrive: '1480201896575631525' },
   '1463233219875831829': { nom: 'Gael',       shift: ['MATIN'],           salonPrive: '1480838083023732899' },
 
@@ -14,27 +14,28 @@ const CHATTEURS = {
   '1379522886083285197': { nom: 'Oswald',     shift: ['APREM'],           salonPrive: '1420381918058385418' },
   '1471068722285383857': { nom: 'Nassah',     shift: ['APREM'],           salonPrive: '1483334260428374067' },
   '1292089597395865600': { nom: 'Judes',      shift: ['APREM'],           salonPrive: '1505903643478593556' },
-  '1393282604970672129': { nom: 'Josepha',    shift: ['APREM'],           salonPrive: '1514595724619284530' },
+  '1317202120474361858': { nom: 'Océane',    shift: ['APREM'],           salonPrive: '1520366750514937886' },
+  '1460645370764722177': { nom: 'Anthony A',    shift: ['APREM'],           salonPrive: '1522331933797912757' },
 
   // SOIR (20h-02h)
-  '778614571672928256':  { nom: 'Cédric',     shift: ['SOIR'],            salonPrive: '1466932790443507752' },
+  '1405589414721355958':  { nom: 'Emérick',     shift: ['SOIR'],            salonPrive: '1518691605736067252' },
   '1453452626078335094': { nom: 'Fayaad',     shift: ['SOIR'],            salonPrive: '1455669674703585290' },
-  '1485373755042824455': { nom: 'Johan',      shift: ['SOIR'],            salonPrive: '1487343306450145290' },
+  '1516809712702853266': { nom: 'Mario',      shift: ['SOIR'],            salonPrive: '1521069517999050844' },
   '1463593178761531504': { nom: 'Hery',       shift: ['SOIR'],            salonPrive: '1468307030430322861' },
   '1432518781095383236': { nom: 'Benoit',     shift: ['SOIR'],            salonPrive: '1457689690315685888' },
   '1416861654083305664': { nom: 'Lindo',      shift: ['SOIR'],            salonPrive: '1459954888405553233' },
   '1387551497616625706': { nom: 'Aryel',      shift: ['SOIR'],            salonPrive: '1492063146007986236' },
-  '1494678136535646270': { nom: 'Christopher',shift: ['SOIR', 'NUIT'],    salonPrive: '1492275867404079329' },
+  '1421468562455007314': { nom: 'Driven',      shift: ['SOIR'],            salonPrive: '1517544661772669038' },
+  '1485373755042824455': { nom: 'Johan',      shift: ['SOIR'],            salonPrive: '1521829710861172796' },
 
   // NUIT (02h-08h)
   '1371927669460959302': { nom: 'Kolvis',     shift: ['NUIT'],            salonPrive: '1509517530451017809' },
+  '1494678136535646270': { nom: 'Christopher',shift: ['NUIT'],            salonPrive: '1492275867404079329' },
 
   // APREM CAD (17h-00h)
   '1348599027989614613': { nom: 'Remen',      shift: ['APREM CAD'],       salonPrive: '1420381461780889602' },
-  '1275411640216457269': { nom: 'Josuah',     shift: ['APREM CAD'],       salonPrive: '1514215113744453752' },
   '1393871746389643327': { nom: 'Thatel',     shift: ['APREM CAD'],       salonPrive: '1494237742047952958' },
   '1472163720305311959': { nom: 'Keoni',     shift: ['APREM CAD'],       salonPrive: '1514271639653716069' },
-  '1069518593215168532': { nom: 'nathan',     shift: ['APREM CAD'],       salonPrive: '1514278882419671110' },
   
   // NUIT CAD (00h-08h)
   '1351209868790464663': { nom: 'Lucius',     shift: ['NUIT CAD'],        salonPrive: '1447921828675719270' },
