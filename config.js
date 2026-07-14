@@ -14,7 +14,7 @@ const CHATTEURS = {
   '1379522886083285197': { nom: 'Oswald',     shift: ['APREM'],           salonPrive: '1420381918058385418' },
   '1471068722285383857': { nom: 'Nassah',     shift: ['APREM'],           salonPrive: '1483334260428374067' },
   '1292089597395865600': { nom: 'Judes',      shift: ['APREM'],           salonPrive: '1505903643478593556' },
-  '1317202120474361858': { nom: 'Océane',    shift: ['APREM'],           salonPrive: '1520366750514937886' },
+  '1463477331103584352': { nom: 'Nah',    shift: ['APREM'],           salonPrive: '1526215856709963878' },
   '1460645370764722177': { nom: 'Anthony A',    shift: ['APREM'],           salonPrive: '1522331933797912757' },
 
   // SOIR (20h-02h)
@@ -27,15 +27,19 @@ const CHATTEURS = {
   '1387551497616625706': { nom: 'Aryel',      shift: ['SOIR'],            salonPrive: '1492063146007986236' },
   '1421468562455007314': { nom: 'Driven',      shift: ['SOIR'],            salonPrive: '1517544661772669038' },
   '1485373755042824455': { nom: 'Johan',      shift: ['SOIR'],            salonPrive: '1521829710861172796' },
-
+  '778614571672928256': { nom: 'Cédric',      shift: ['SOIR'],            salonPrive: '1525776681132884119' },
+  '1398614993070592052': { nom: 'Zoro',      shift: ['SOIR'],            salonPrive: '1526144897344606208' },
+  
   // NUIT (02h-08h)
   '1371927669460959302': { nom: 'Kolvis',     shift: ['NUIT'],            salonPrive: '1509517530451017809' },
   '1494678136535646270': { nom: 'Christopher',shift: ['NUIT'],            salonPrive: '1492275867404079329' },
-
+  '1347360565189939210': { nom: 'Geraldo',shift: ['NUIT'],            salonPrive: '1526130690683437188' },
+  
   // APREM CAD (17h-00h)
   '1348599027989614613': { nom: 'Remen',      shift: ['APREM CAD'],       salonPrive: '1420381461780889602' },
   '1393871746389643327': { nom: 'Thatel',     shift: ['APREM CAD'],       salonPrive: '1494237742047952958' },
   '1472163720305311959': { nom: 'Keoni',     shift: ['APREM CAD'],       salonPrive: '1514271639653716069' },
+  '1303698715621589086': { nom: 'Espoir',     shift: ['APREM CAD'],       salonPrive: '1526458398663508070' },
   
   // NUIT CAD (00h-08h)
   '1351209868790464663': { nom: 'Lucius',     shift: ['NUIT CAD'],        salonPrive: '1447921828675719270' },
