@@ -50,10 +50,10 @@ const SHIFTS = [
 
 const MODELES = [
   'Anna', 'Anais', 'Aurélie', 'Alice', 'Lola', 'Sarah',
-  'Ely', 'Ely FREE',
+  'Ely', 'Ely FREE', 'Eve',
   'Gabriele', 'Gabriele FREE',
   'Melina', 'Melina FREE',
-  'Xoklau VIP', 'Xoklau FREE'
+  'Xoklau VIP', 'Xoklau FREE', 'Marina'
 ];
 
 const SALONS = {
@@ -62,12 +62,12 @@ const SALONS = {
   primes:      '1480571097127714816',
 };
 
-const MODELES_GROUPE_A = ['Anna', 'Anais', 'Aurélie', 'Alice', 'Lola', 'Sarah'];
+const MODELES_GROUPE_A = ['Anna', 'Anais', 'Aurélie', 'Alice', 'Lola', 'Sarah', 'Marina'];
 const MODELES_GROUPE_B = [
   'Ely', 'Ely FREE',
   'Gabriele', 'Gabriele FREE',
   'Melina', 'Melina FREE',
-  'Xoklau VIP', 'Xoklau FREE'
+  'Xoklau VIP', 'Xoklau FREE', 'Eve'
 ];
 
 function getGroupeModele(modele) {
