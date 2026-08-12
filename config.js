@@ -4,8 +4,6 @@ const CHATTEURS = {
   '1466760403462914111': { nom: 'Mialy',      shift: ['MATIN'],           salonPrive: '1456726270057382112' },
   '1480839559385448572': { nom: 'Sébastien',  shift: ['MATIN'],           salonPrive: '1482430724865786038' },
   '1436794235604041818': { nom: 'Michel',     shift: ['MATIN'],           salonPrive: '1500481974937190440' },
-  '698610283504992298': { nom: 'Anthony M',      shift: ['MATIN'],           salonPrive: '1521109946358562846' },
-  '1495831931496038421': { nom: 'Arie',       shift: ['MATIN'],           salonPrive: '1521110264718819428' },
   '1156954051750150185': { nom: 'Jodel',      shift: ['MATIN'],           salonPrive: '1480201896575631525' },
   '1463233219875831829': { nom: 'Gael',       shift: ['MATIN'],           salonPrive: '1480838083023732899' },
 
@@ -13,32 +11,24 @@ const CHATTEURS = {
   '1365037992535658526': { nom: 'Tonny',      shift: ['APREM'],           salonPrive: '1420381853147332628' },
   '1379522886083285197': { nom: 'Oswald',     shift: ['APREM'],           salonPrive: '1420381918058385418' },
   '1471068722285383857': { nom: 'Nassah',     shift: ['APREM'],           salonPrive: '1483334260428374067' },
-  '1292089597395865600': { nom: 'Judes',      shift: ['APREM'],           salonPrive: '1505903643478593556' },
-  '1463477331103584352': { nom: 'Nah',    shift: ['APREM'],           salonPrive: '1526215856709963878' },
-  '1460645370764722177': { nom: 'Anthony A',    shift: ['APREM'],           salonPrive: '1522331933797912757' },
+  '1525888679942557757': { nom: 'Anddy',      shift: ['APREM'],           salonPrive: '1533463090275024906' },
 
   // SOIR (20h-02h)
-  '1405589414721355958':  { nom: 'Emérick',     shift: ['SOIR'],            salonPrive: '1518691605736067252' },
-  '1453452626078335094': { nom: 'Fayaad',     shift: ['SOIR'],            salonPrive: '1455669674703585290' },
+  '1445847814314922147': { nom: 'Fayaad',     shift: ['SOIR'],            salonPrive: '1455669674703585290' },
   '1516809712702853266': { nom: 'Mario',      shift: ['SOIR'],            salonPrive: '1521069517999050844' },
   '1463593178761531504': { nom: 'Hery',       shift: ['SOIR'],            salonPrive: '1468307030430322861' },
   '1432518781095383236': { nom: 'Benoit',     shift: ['SOIR'],            salonPrive: '1457689690315685888' },
   '1416861654083305664': { nom: 'Lindo',      shift: ['SOIR'],            salonPrive: '1459954888405553233' },
   '1387551497616625706': { nom: 'Aryel',      shift: ['SOIR'],            salonPrive: '1492063146007986236' },
-  '1421468562455007314': { nom: 'Driven',      shift: ['SOIR'],            salonPrive: '1517544661772669038' },
-  '1485373755042824455': { nom: 'Johan',      shift: ['SOIR'],            salonPrive: '1521829710861172796' },
   '778614571672928256': { nom: 'Cédric',      shift: ['SOIR'],            salonPrive: '1525776681132884119' },
   '1398614993070592052': { nom: 'Zoro',      shift: ['SOIR'],            salonPrive: '1526144897344606208' },
   
   // NUIT (02h-08h)
-  '1371927669460959302': { nom: 'Kolvis',     shift: ['NUIT'],            salonPrive: '1509517530451017809' },
-  '1494678136535646270': { nom: 'Christopher',shift: ['NUIT'],            salonPrive: '1492275867404079329' },
   '1347360565189939210': { nom: 'Geraldo',shift: ['NUIT'],            salonPrive: '1526130690683437188' },
   
   // APREM CAD (17h-00h)
   '1348599027989614613': { nom: 'Remen',      shift: ['APREM CAD'],       salonPrive: '1420381461780889602' },
-  '1393871746389643327': { nom: 'Thatel',     shift: ['APREM CAD'],       salonPrive: '1494237742047952958' },
-  '1472163720305311959': { nom: 'Keoni',     shift: ['APREM CAD'],       salonPrive: '1514271639653716069' },
+  '1450180158882316308': { nom: 'Seedorf',     shift: ['APREM CAD'],       salonPrive: '1536889619713364089' },
   '1303698715621589086': { nom: 'Espoir',     shift: ['APREM CAD'],       salonPrive: '1526458398663508070' },
   
   // NUIT CAD (00h-08h)
